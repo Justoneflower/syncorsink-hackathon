@@ -173,4 +173,5 @@ The deck's production stack (Temporal on ECS, MSK Kafka, SageMaker entity resolu
 
 SyncOrSink Squad — Kusum Indoria, Ansh Varma. AI for Bharat Hackathon 2026.
 #   s y n c o r s i n k  
+ #   s y n c o r s i n k  
  

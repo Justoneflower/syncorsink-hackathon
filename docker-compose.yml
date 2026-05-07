@@ -1,0 +1,99 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: syncorsink
+      POSTGRES_PASSWORD: syncorsink
+      POSTGRES_DB: syncorsink
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_replication_slots=4
+      -c max_wal_senders=4
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syncorsink"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - ./scripts/init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+  sws-mock:
+    build: ./services/sws-mock
+    environment:
+      DATABASE_URL: postgresql://syncorsink:syncorsink@postgres:5432/sws
+      MIDDLEWARE_WEBHOOK_URL: http://middleware:8000/webhooks/sws
+      SERVICE_NAME: sws-mock
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+  factories-mock:
+    build: ./services/factories-mock
+    environment:
+      DATABASE_URL: postgresql://syncorsink:syncorsink@postgres:5432/factories
+      SERVICE_NAME: factories-mock
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
+
+  shops-mock:
+    build: ./services/shops-mock
+    environment:
+      DATABASE_URL: postgresql://syncorsink:syncorsink@postgres:5432/shops
+      SERVICE_NAME: shops-mock
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8003 --reload
+
+  middleware:
+    build: ./services/middleware
+    environment:
+      DATABASE_URL: postgresql://syncorsink:syncorsink@postgres:5432/middleware
+      REDIS_URL: redis://redis:6379/0
+      FACTORIES_URL: http://factories-mock:8002
+      SHOPS_URL: http://shops-mock:8003
+      SWS_URL: http://sws-mock:8001
+      SERVICE_NAME: middleware
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data:ro
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  dashboard:
+    image: python:3.11-alpine
+    working_dir: /app
+    volumes:
+      - ./dashboard:/app:ro
+    ports:
+      - "5173:5173"
+    command: python -m http.server 5173 --bind 0.0.0.0
+    depends_on:
+      - middleware

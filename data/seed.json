@@ -1,0 +1,94 @@
+[
+  {
+    "ubid": "KA-UBID-2025-0089123",
+    "pan": "AAACR5055K",
+    "cin": "U72200KA2018PTC112233",
+    "business_name": "Acme Industries Pvt Ltd",
+    "registered_address": {
+      "line1": "Plot 14, Phase 2",
+      "line2": "Bommasandra Industrial Area",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "pincode": "560099"
+    },
+    "authorised_signatory": {
+      "name": "Rajesh Kumar",
+      "designation": "Managing Director",
+      "din": "08123456"
+    },
+    "directors": [
+      {"name": "Rajesh Kumar", "din": "08123456"},
+      {"name": "Priya Menon", "din": "08234567"}
+    ],
+    "factory_license_no": "KA/FAC/BLR-U/2019/14782",
+    "factory_workers_count": 47,
+    "factory_power_kw": 125.5,
+    "factory_manager_name": "S.K. Patil",
+    "factory_license_validity": "2027-03-31",
+    "shop_registration_no": "BNG-31/SHP/CE/2020/55821",
+    "shop_employees": 47,
+    "shop_valid_till": "2025-04-19"
+  },
+  {
+    "ubid": "KA-UBID-2025-0034871",
+    "pan": "ABFCT8821M",
+    "cin": "U15400KA2015PTC078910",
+    "business_name": "Tulsi Foods & Beverages",
+    "registered_address": {
+      "line1": "No. 47, 5th Cross",
+      "line2": "Peenya Industrial Estate",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "pincode": "560058"
+    },
+    "authorised_signatory": {
+      "name": "Anjali Desai",
+      "designation": "Director",
+      "din": "07556621"
+    },
+    "directors": [
+      {"name": "Anjali Desai", "din": "07556621"},
+      {"name": "Vikram Desai", "din": "07556622"}
+    ],
+    "factory_license_no": "KA/FAC/BLR-U/2017/09421",
+    "factory_workers_count": 23,
+    "factory_power_kw": 65.0,
+    "factory_manager_name": "M. Lakshmi",
+    "factory_license_validity": "2026-09-30",
+    "shop_registration_no": "BNG-09/SHP/CE/2018/22113",
+    "shop_employees": 23,
+    "shop_valid_till": "2024-12-31"
+  },
+  {
+    "ubid": "KA-UBID-2025-0061204",
+    "pan": "AALCS9912R",
+    "cin": "U24232KA2020PTC134455",
+    "business_name": "Sahyadri Pharma Pvt Ltd",
+    "registered_address": {
+      "line1": "Plot B-12, KIADB",
+      "line2": "Hosur Road",
+      "city": "Bengaluru",
+      "district": "Bengaluru Urban",
+      "state": "Karnataka",
+      "pincode": "560100"
+    },
+    "authorised_signatory": {
+      "name": "Dr. Suresh Bhat",
+      "designation": "Managing Director",
+      "din": "09112233"
+    },
+    "directors": [
+      {"name": "Dr. Suresh Bhat", "din": "09112233"}
+    ],
+    "factory_license_no": "KA/FAC/BLR-U/2020/16559",
+    "factory_workers_count": 89,
+    "factory_power_kw": 240.0,
+    "factory_manager_name": "Ravi Shankar",
+    "factory_license_validity": "2028-06-30",
+    "shop_registration_no": "BNG-12/SHP/CE/2021/77332",
+    "shop_employees": 89,
+    "shop_valid_till": "2026-06-30"
+  }
+]

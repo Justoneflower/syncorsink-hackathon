@@ -1,0 +1,832 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SyncOrSink · Operations Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&display=swap"
+    rel="stylesheet"
+  />
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg-0: #0d0e10;
+      --bg-1: #14161a;
+      --bg-2: #1c1f25;
+      --bg-3: #252932;
+      --line: #2a2e38;
+      --line-strong: #3a3f4b;
+      --ink: #e6e8ec;
+      --ink-dim: #8a8f9c;
+      --ink-faint: #4f5460;
+      --accent: #ffd56a;       /* amber, like a railway dispatch board */
+      --accent-dim: #b89951;
+      --green: #6ee79a;
+      --green-dim: #3d7a52;
+      --red: #ff7a7a;
+      --red-dim: #7a3d3d;
+      --blue: #82bdff;
+      --magenta: #d49eff;
+      --cyan: #7ce0d3;
+      --orange: #ff9f6a;
+      --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--bg-0);
+      color: var(--ink);
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Faint grid background — operations-console motif */
+    body {
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    button {
+      font-family: inherit;
+      font-size: inherit;
+      background: var(--bg-2);
+      color: var(--ink);
+      border: 1px solid var(--line-strong);
+      padding: 6px 10px;
+      cursor: pointer;
+      transition: background 120ms, border-color 120ms;
+    }
+    button:hover { background: var(--bg-3); border-color: var(--accent-dim); }
+    button:active { transform: translateY(1px); }
+    button.primary { background: var(--accent); color: #1a1a1a; border-color: var(--accent); font-weight: 600; }
+    button.primary:hover { background: #ffe08a; }
+    button.danger { background: transparent; color: var(--red); border-color: var(--red-dim); }
+    button.danger:hover { background: rgba(255, 122, 122, 0.08); }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────────────── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+    .brand-mark {
+      font-family: 'Fraunces', serif;
+      font-weight: 500;
+      font-size: 22px;
+      letter-spacing: -0.01em;
+      color: var(--ink);
+    }
+    .brand-mark em {
+      color: var(--accent);
+      font-style: italic;
+    }
+    .brand-tag {
+      color: var(--ink-faint);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .topbar-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--ink-dim);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .live-pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .live-pulse::before {
+      content: "";
+      display: inline-block;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 var(--green);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(110, 231, 154, 0.5); }
+      70% { box-shadow: 0 0 0 6px rgba(110, 231, 154, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(110, 231, 154, 0); }
+    }
+
+    /* ─── MAIN GRID ──────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      gap: 1px;
+      background: var(--line);
+      min-height: 0;
+    }
+    @media (max-width: 1280px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .col {
+      background: var(--bg-0);
+      overflow-y: auto;
+    }
+    .col-header {
+      position: sticky;
+      top: 0;
+      background: var(--bg-1);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 10;
+    }
+    .col-header h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 500;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+    }
+    .col-header .count {
+      font-size: 11px;
+      color: var(--ink-faint);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ─── BUSINESSES (LEFT COL) ───────────────────────────────────── */
+    .biz-list { padding: 4px 0; }
+    .biz-item {
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--bg-2);
+      cursor: pointer;
+      transition: background 100ms;
+    }
+    .biz-item:hover { background: var(--bg-1); }
+    .biz-item.active {
+      background: var(--bg-2);
+      border-left: 3px solid var(--accent);
+      padding-left: 15px;
+    }
+    .biz-ubid {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+    .biz-pan {
+      font-size: 10px;
+      color: var(--ink-faint);
+      margin-top: 2px;
+    }
+    .biz-depts {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .dept-chip {
+      font-size: 9px;
+      padding: 1px 6px;
+      background: var(--bg-3);
+      color: var(--ink-dim);
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── FEED (CENTER COL) ──────────────────────────────────────── */
+    .feed { padding: 0; }
+    .feed-row {
+      display: grid;
+      grid-template-columns: 90px 100px 100px 110px 1fr;
+      gap: 16px;
+      padding: 8px 18px;
+      border-bottom: 1px solid var(--bg-1);
+      align-items: center;
+      font-size: 12px;
+      transition: background 200ms;
+    }
+    .feed-row.flash { animation: flash-in 1.2s ease-out; }
+    @keyframes flash-in {
+      0% { background: rgba(255, 213, 106, 0.12); }
+      100% { background: transparent; }
+    }
+    .feed-row:hover { background: var(--bg-1); }
+    .feed-time { color: var(--ink-faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .feed-source { color: var(--ink-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .feed-action {
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .feed-action.ingest    { color: var(--cyan); }
+    .feed-action.lookup    { color: var(--blue); }
+    .feed-action.translate { color: var(--magenta); }
+    .feed-action.write     { color: var(--green); }
+    .feed-action.conflict  { color: var(--orange); }
+    .feed-action.policy    { color: var(--orange); }
+    .feed-action.review_queued { color: var(--orange); }
+    .feed-action.manual_resolve { color: var(--green); }
+    .feed-action.propagate, .feed-action.retry { color: var(--ink-dim); }
+    .feed-target { color: var(--ink-dim); font-size: 11px; }
+    .feed-status {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      width: fit-content;
+    }
+    .feed-status.ok { color: var(--green); background: rgba(110, 231, 154, 0.06); }
+    .feed-status.skipped { color: var(--orange); background: rgba(255, 159, 106, 0.06); }
+    .feed-status.error { color: var(--red); background: rgba(255, 122, 122, 0.06); }
+
+    /* ─── TRACE PANE ──────────────────────────────────────────────── */
+    .trace-panel { padding: 0; }
+    .trace-header {
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg-1);
+    }
+    .trace-header .label {
+      font-size: 10px;
+      color: var(--ink-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .trace-header h3 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .trace-header .biz-name {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .trace-event {
+      border-bottom: 1px solid var(--bg-1);
+      padding: 12px 18px;
+    }
+    .trace-event-head {
+      font-size: 10px;
+      color: var(--ink-faint);
+      margin-bottom: 6px;
+      letter-spacing: 0.05em;
+    }
+    .trace-step {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 10px;
+      padding: 4px 0;
+      font-size: 11px;
+    }
+    .trace-step-time {
+      color: var(--ink-faint);
+      font-variant-numeric: tabular-nums;
+    }
+    .trace-step-body {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .trace-step-action {
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .trace-step-arrow { color: var(--ink-faint); }
+    .trace-step-target { color: var(--ink-dim); }
+    .trace-step-detail {
+      flex-basis: 100%;
+      color: var(--ink-faint);
+      font-size: 10px;
+      padding-left: 0;
+      margin-top: 2px;
+    }
+
+    /* ─── BUSINESS DETAIL CARDS ────────────────────────────────── */
+    .biz-detail {
+      padding: 18px;
+      border-bottom: 1px solid var(--bg-1);
+    }
+    .biz-detail h4 {
+      font-size: 10px;
+      color: var(--ink-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .biz-rec {
+      background: var(--bg-1);
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 11px;
+    }
+    .biz-rec-source {
+      display: flex;
+      justify-content: space-between;
+      color: var(--ink-faint);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .biz-rec-source .source-name { color: var(--accent); }
+    .biz-rec-field { color: var(--ink-dim); font-size: 10px; }
+    .biz-rec-value { color: var(--ink); margin-bottom: 4px; }
+
+    /* ─── CONFLICT BANNER ────────────────────────────────────────── */
+    .conflict-banner {
+      background: linear-gradient(90deg, rgba(255, 159, 106, 0.10), transparent);
+      border-left: 3px solid var(--orange);
+      padding: 10px 18px;
+      margin-bottom: 1px;
+    }
+    .conflict-banner-title {
+      font-size: 11px;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .conflict-banner-detail { font-size: 11px; color: var(--ink-dim); }
+    .conflict-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    /* ─── EMPTY STATES ───────────────────────────────────────────── */
+    .empty {
+      padding: 40px 18px;
+      text-align: center;
+      color: var(--ink-faint);
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* ─── POLICY BADGE ────────────────────────────────────────── */
+    .policies {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--bg-1);
+    }
+    .policies h4 {
+      font-size: 10px;
+      color: var(--ink-faint);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .policy-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 11px;
+      color: var(--ink-dim);
+    }
+    .policy-row .field-name { color: var(--ink); }
+
+    /* Scrollbar — restrained */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 0; }
+    ::-webkit-scrollbar-thumb:hover { background: #4a4f5b; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+    const API = 'http://localhost:8000';
+
+    // ─── Fetch helpers ─────────────────────────────────────────
+    const fetchJSON = async (path) => {
+      const r = await fetch(`${API}${path}`);
+      if (!r.ok) throw new Error(`${path}: ${r.status}`);
+      return r.json();
+    };
+
+    const fmtTime = (iso) => {
+      try {
+        const d = new Date(iso);
+        return d.toLocaleTimeString('en-GB', { hour12: false }) +
+               '.' + String(d.getMilliseconds()).padStart(3, '0');
+      } catch { return iso; }
+    };
+
+    // ─── Components ────────────────────────────────────────────
+
+    const Topbar = ({ totalEvents }) => (
+      <div className="topbar">
+        <div className="brand">
+          <div className="brand-mark">Sync<em>Or</em>Sink</div>
+          <div className="brand-tag">Karnataka SWS · Interop Layer</div>
+        </div>
+        <div className="topbar-meta">
+          <div className="live-pulse">Live</div>
+          <div>{totalEvents.toLocaleString()} events</div>
+          <div>Theme 2 · AI for Bharat</div>
+        </div>
+      </div>
+    );
+
+    const BusinessList = ({ businesses, selectedUbid, onSelect }) => (
+      <div className="col">
+        <div className="col-header">
+          <h2>Businesses</h2>
+          <span className="count">{businesses.length}</span>
+        </div>
+        <div className="biz-list">
+          {businesses.length === 0 && <div className="empty">No businesses yet — run the seed script.</div>}
+          {businesses.map(b => (
+            <div
+              key={b.ubid}
+              className={`biz-item ${selectedUbid === b.ubid ? 'active' : ''}`}
+              onClick={() => onSelect(b.ubid)}
+            >
+              <div className="biz-ubid">{b.ubid}</div>
+              <div className="biz-pan">PAN {b.pan}</div>
+              <div className="biz-depts">
+                <span className="dept-chip">SWS</span>
+                {b.depts.map(d => <span key={d} className="dept-chip">{d}</span>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    const FeedRow = ({ entry, isNew, onClick }) => (
+      <div
+        className={`feed-row ${isNew ? 'flash' : ''}`}
+        onClick={() => onClick(entry.ubid)}
+        style={{ cursor: entry.ubid ? 'pointer' : 'default' }}
+      >
+        <div className="feed-time">{fmtTime(entry.occurred_at)}</div>
+        <div className="feed-source">{entry.source}</div>
+        <div className={`feed-action ${entry.action}`}>{entry.action.replace('_', ' ')}</div>
+        <div className="feed-target">{entry.target ? `→ ${entry.target}` : '—'}</div>
+        <div>
+          <span className={`feed-status ${entry.status}`}>{entry.status}</span>
+          {entry.ubid && <span style={{ marginLeft: 8, color: 'var(--ink-faint)', fontSize: 10 }}>{entry.ubid}</span>}
+        </div>
+      </div>
+    );
+
+    const Feed = ({ entries, onSelectUbid, newestEventIds }) => (
+      <div className="col">
+        <div className="col-header">
+          <h2>Propagation Feed</h2>
+          <span className="count">{entries.length}</span>
+        </div>
+        <div className="feed">
+          {entries.length === 0 && <div className="empty">No activity yet.</div>}
+          {entries.map((e, i) => (
+            <FeedRow
+              key={`${e.event_id}-${e.action}-${e.target}-${i}`}
+              entry={e}
+              isNew={newestEventIds.has(`${e.event_id}-${e.action}-${e.target}-${i}`)}
+              onClick={onSelectUbid}
+            />
+          ))}
+        </div>
+      </div>
+    );
+
+    const ConflictBanner = ({ conflict, onResolve }) => (
+      <div className="conflict-banner">
+        <div className="conflict-banner-title">⚠ Conflict pending review</div>
+        <div className="conflict-banner-detail">
+          Field: <strong>{conflict.field}</strong> · UBID: <code>{conflict.ubid}</code>
+        </div>
+        <div className="conflict-banner-detail" style={{ marginTop: 4 }}>
+          {conflict.incoming_source.toUpperCase()} proposed:&nbsp;
+          <code>{JSON.stringify(conflict.incoming_value).slice(0, 80)}…</code>
+        </div>
+        <div className="conflict-banner-detail">
+          {conflict.competing_source.toUpperCase()} proposed:&nbsp;
+          <code>{JSON.stringify(conflict.competing_value).slice(0, 80)}…</code>
+        </div>
+        <div className="conflict-actions">
+          <button className="primary" onClick={() => onResolve(conflict.id, 'incoming')}>
+            Accept {conflict.incoming_source}
+          </button>
+          <button onClick={() => onResolve(conflict.id, 'competing')}>
+            Accept {conflict.competing_source}
+          </button>
+          <button className="danger" onClick={() => onResolve(conflict.id, 'manual')}>Dismiss</button>
+        </div>
+      </div>
+    );
+
+    const TraceStep = ({ entry }) => {
+      let detail = null;
+      if (entry.action === 'conflict' && entry.payload) {
+        detail = `field=${entry.payload.field} · vs ${entry.payload.competing_source} · policy=${entry.payload.policy}`;
+      } else if (entry.action === 'policy' && entry.payload) {
+        detail = `field=${entry.payload.field} → ${entry.payload.outcome}`;
+      } else if (entry.action === 'lookup' && entry.payload?.depts) {
+        detail = `depts=[${entry.payload.depts.join(', ')}]`;
+      } else if (entry.action === 'review_queued' && entry.payload) {
+        detail = `field=${entry.payload.field} · queued for officer`;
+      }
+      return (
+        <div className="trace-step">
+          <div className="trace-step-time">{fmtTime(entry.occurred_at)}</div>
+          <div className="trace-step-body">
+            <span className={`trace-step-action feed-action ${entry.action}`}>
+              {entry.action.replace('_', ' ')}
+            </span>
+            <span className="trace-step-arrow">·</span>
+            <span className="trace-step-target">
+              {entry.source}{entry.target ? ` → ${entry.target}` : ''}
+            </span>
+            <span className={`feed-status ${entry.status}`}>{entry.status}</span>
+            {detail && <div className="trace-step-detail">{detail}</div>}
+            {entry.error && <div className="trace-step-detail" style={{ color: 'var(--red)' }}>error: {entry.error}</div>}
+          </div>
+        </div>
+      );
+    };
+
+    const TracePane = ({ ubid, trace, conflicts, policies, onResolveConflict, snapshot }) => {
+      // Group trace entries by event_id
+      const groups = useMemo(() => {
+        const out = [];
+        let current = null;
+        for (const e of trace) {
+          if (!current || current.event_id !== e.event_id) {
+            current = { event_id: e.event_id, source: e.source, entries: [] };
+            out.push(current);
+          }
+          current.entries.push(e);
+        }
+        return out;
+      }, [trace]);
+
+      const myConflicts = conflicts.filter(c => c.ubid === ubid && c.status === 'pending');
+
+      if (!ubid) {
+        return (
+          <div className="col">
+            <div className="col-header"><h2>Trace</h2></div>
+            <div className="empty">Select a business on the left to see its full audit trail.</div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="col">
+          <div className="trace-header">
+            <div className="label">Audit Trace</div>
+            <h3>{ubid}</h3>
+            {snapshot?.business_name && <div className="biz-name">{snapshot.business_name}</div>}
+          </div>
+
+          {myConflicts.map(c => (
+            <ConflictBanner key={c.id} conflict={c} onResolve={onResolveConflict} />
+          ))}
+
+          {snapshot && <BizSnapshot snap={snapshot} />}
+
+          {policies && (
+            <div className="policies">
+              <h4>Conflict policies (per field)</h4>
+              {Object.entries(policies)
+                .filter(([k]) => !k.startsWith('__'))
+                .map(([field, p]) => (
+                  <div key={field} className="policy-row">
+                    <span className="field-name">{field}</span>
+                    <span>
+                      {p.policy}{p.source_of_record ? `:${p.source_of_record}` : ''}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          <div className="trace-panel">
+            {groups.length === 0 && <div className="empty">No activity for this UBID yet.</div>}
+            {groups.map(g => (
+              <div key={g.event_id} className="trace-event">
+                <div className="trace-event-head">
+                  event {g.event_id.slice(0, 12)}… · source {g.source}
+                </div>
+                {g.entries.map((e, i) => <TraceStep key={i} entry={e} />)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    const BizSnapshot = ({ snap }) => (
+      <div className="biz-detail">
+        <h4>Current state across systems</h4>
+        {snap.sws && (
+          <div className="biz-rec">
+            <div className="biz-rec-source"><span className="source-name">SWS</span><span>structured</span></div>
+            <div className="biz-rec-field">registered_address</div>
+            <div className="biz-rec-value">
+              {snap.sws.registered_address.line1}, {snap.sws.registered_address.line2}, {snap.sws.registered_address.city} - {snap.sws.registered_address.pincode}
+            </div>
+            <div className="biz-rec-field" style={{ marginTop: 8 }}>authorised_signatory</div>
+            <div className="biz-rec-value">{snap.sws.authorised_signatory.name}</div>
+          </div>
+        )}
+        {snap.factories && (
+          <div className="biz-rec">
+            <div className="biz-rec-source"><span className="source-name">FACTORIES</span><span>flat string · uppercase</span></div>
+            <div className="biz-rec-field">premises_address</div>
+            <div className="biz-rec-value">{snap.factories.premises_address}</div>
+            <div className="biz-rec-field" style={{ marginTop: 8 }}>occupier_name</div>
+            <div className="biz-rec-value">{snap.factories.occupier_name}</div>
+          </div>
+        )}
+        {snap.shops && (
+          <div className="biz-rec">
+            <div className="biz-rec-source"><span className="source-name">SHOPS (e-Karmika)</span><span>semi-structured</span></div>
+            <div className="biz-rec-field">address_of_establishment</div>
+            <div className="biz-rec-value">
+              {snap.shops.address_of_establishment.door_no}, {snap.shops.address_of_establishment.street}, {snap.shops.address_of_establishment.locality}, {snap.shops.address_of_establishment.city} - {snap.shops.address_of_establishment.pin}
+            </div>
+            <div className="biz-rec-field" style={{ marginTop: 8 }}>employer_name</div>
+            <div className="biz-rec-value">{snap.shops.employer_name}</div>
+          </div>
+        )}
+      </div>
+    );
+
+    // ─── Main App ──────────────────────────────────────────────
+    function App() {
+      const [businesses, setBusinesses] = useState([]);
+      const [audit, setAudit] = useState([]);
+      const [selectedUbid, setSelectedUbid] = useState(null);
+      const [trace, setTrace] = useState([]);
+      const [conflicts, setConflicts] = useState([]);
+      const [policies, setPolicies] = useState(null);
+      const [snapshot, setSnapshot] = useState(null);
+      const [newestKeys, setNewestKeys] = useState(new Set());
+      const prevAuditLen = useRef(0);
+
+      // Bootstrap
+      useEffect(() => {
+        fetchJSON('/businesses').then(bs => {
+          setBusinesses(bs);
+          if (bs.length && !selectedUbid) setSelectedUbid(bs[0].ubid);
+        }).catch(console.error);
+        fetchJSON('/policies').then(setPolicies).catch(console.error);
+      }, []);
+
+      // Live audit feed (poll every 2s)
+      useEffect(() => {
+        const tick = async () => {
+          try {
+            const data = await fetchJSON('/audit?limit=80');
+            setAudit(prev => {
+              const newKeys = new Set();
+              if (prev.length > 0 && data.length > prev.length) {
+                // Mark first N new entries to flash
+                const diff = data.length - prev.length;
+                for (let i = 0; i < diff; i++) {
+                  const e = data[i];
+                  newKeys.add(`${e.event_id}-${e.action}-${e.target}-${i}`);
+                }
+                setNewestKeys(newKeys);
+                setTimeout(() => setNewestKeys(new Set()), 1300);
+              }
+              return data;
+            });
+          } catch (e) { /* swallow */ }
+        };
+        tick();
+        const id = setInterval(tick, 2000);
+        return () => clearInterval(id);
+      }, []);
+
+      // Live conflicts
+      useEffect(() => {
+        const tick = async () => {
+          try {
+            const c = await fetchJSON('/conflicts?status=pending');
+            setConflicts(c);
+          } catch (e) { /* swallow */ }
+        };
+        tick();
+        const id = setInterval(tick, 2500);
+        return () => clearInterval(id);
+      }, []);
+
+      // Trace + snapshot for selected
+      useEffect(() => {
+        if (!selectedUbid) return;
+        const tick = async () => {
+          try {
+            const t = await fetchJSON(`/trace/${selectedUbid}`);
+            setTrace(t);
+          } catch (e) { /* swallow */ }
+        };
+        tick();
+        const id = setInterval(tick, 2000);
+        return () => clearInterval(id);
+      }, [selectedUbid]);
+
+      // Fetch business snapshot from each system
+      useEffect(() => {
+        if (!selectedUbid) { setSnapshot(null); return; }
+        const biz = businesses.find(b => b.ubid === selectedUbid);
+        if (!biz) return;
+        const fetchAll = async () => {
+          const out = {};
+          try { out.sws = await (await fetch(`http://localhost:8001/businesses/${selectedUbid}`)).json(); } catch {}
+          try { out.factories = await (await fetch(`http://localhost:8002/factories/by-pan/${biz.pan}`)).json(); } catch {}
+          try { out.shops = await (await fetch(`http://localhost:8003/establishments/by-pan/${biz.pan}`)).json(); } catch {}
+          out.business_name = out.sws?.business_name;
+          setSnapshot(out);
+        };
+        fetchAll();
+        const id = setInterval(fetchAll, 2000);
+        return () => clearInterval(id);
+      }, [selectedUbid, businesses]);
+
+      const onResolve = useCallback(async (id, resolution) => {
+        try {
+          await fetch(`${API}/conflicts/${id}/resolve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resolution, resolved_by: 'officer-dashboard' }),
+          });
+          const c = await fetchJSON('/conflicts?status=pending');
+          setConflicts(c);
+        } catch (e) { console.error(e); }
+      }, []);
+
+      return (
+        <div className="app">
+          <Topbar totalEvents={audit.length} />
+          <div className="grid">
+            <BusinessList
+              businesses={businesses}
+              selectedUbid={selectedUbid}
+              onSelect={setSelectedUbid}
+            />
+            <Feed
+              entries={audit}
+              onSelectUbid={setSelectedUbid}
+              newestEventIds={newestKeys}
+            />
+            <TracePane
+              ubid={selectedUbid}
+              trace={trace}
+              conflicts={conflicts}
+              policies={policies}
+              onResolveConflict={onResolve}
+              snapshot={snapshot}
+            />
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
